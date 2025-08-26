@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CM-bot</title>
+    <!-- Use Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Default Dark Theme */
+        body {
+            background: linear-gradient(135deg, #2D0068, #2A004C, #1A0033);
+            background-size: cover;
+            background-repeat: no-repeat;
+            color: #E2E8F0;
+        }
+        
+        .dark-theme-gradient {
+            background: linear-gradient(135deg, #4F46E5, #EC4899, #A855F7);
+        }
+
+        /* Light Theme */
+        .light-theme {
+            background: linear-gradient(135deg, #E0C7FE, #FDD4D6, #C7D8FF);
+            color: #1a202c;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            max-width: 768px;
+            margin: auto;
+            min-height: 100vh;
+        }
+
+        .chat-history {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .message {
+            margin-bottom: 0.5rem;
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background-color: #2D3748; /* Dark gray for user message */
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 0.5rem;
+        }
+
+        .light-theme .user-message {
+            background-color: #CBD5E0;
+            color: #1a202c;
+        }
+
+        .bot-message {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #1a202c; /* Dark text for light background */
+            align-self: flex-start;
+            border-bottom-left-radius: 0.5rem;
+        }
+
+        .light-theme .bot-message {
+            background-color: rgba(0, 0, 0, 0.1);
+            color: #1a202c;
+        }
+
+        .loading-dots {
+            display: inline-block;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-5px);
+            }
+            60% {
+                transform: translateY(-2.5px);
+            }
+        }
+        
+        /* New theme button styling */
+        .theme-toggle-btn {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            z-index: 10;
+            background: transparent;
+            border: none;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .theme-toggle-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Custom Modal Styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-container {
+            background-color: white;
+            color: black;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            max-width: 90%;
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .microphone-recording {
+            color: red;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Copilot-like animation */
+        .copilot-spin {
+            animation: copilot-spin 1.5s linear infinite;
+        }
+
+        @keyframes copilot-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="chat-container">
+        <!-- Theme Toggle Button -->
+        <button id="theme-toggle-btn" class="theme-toggle-btn text-white">
+            <!-- Moon icon for dark theme -->
+            <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon-star"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v2"/><path d="M19 3v2"/><path d="M15 4h.01"/><path d="M17.5 17.5.5 17.5"/><path d="M17.5 17.5.5 17.5"/></svg>
+            <!-- Sun icon for light theme -->
+            <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-medium hidden"><circle cx="12" cy="12" r="4"/><path d="M12 3v1"/><path d="M12 20v1"/><path d="M3 12h1"/><path d="M20 12h1"/><path d="m18.364 5.636-.707.707"/><path d="m6.343 17.657-.707.707"/><path d="m5.636 6.364.707-.707"/><path d="m17.657 17.657.707-.707"/></svg>
+        </button>
+
+        <!-- Header -->
+        <div class="flex justify-center items-center p-4 bg-gray-800 rounded-b-lg m-4 shadow-xl dark-theme-gradient">
+            <h1 class="text-xl font-bold">CM-bot</h1>
+        </div>
+
+        <!-- User ID Display -->
+        <div class="flex justify-center text-sm text-gray-400 -mt-2 mb-2">
+            User ID: <span id="userIdDisplay" class="ml-1 font-mono">Loading...</span>
+        </div>
+
+        <!-- Chat History -->
+        <div id="chatHistory" class="chat-history">
+            <div class="message bot-message">Hello there! 👋 I am CM-bot, Chandramohan's AI assistant. How can I help you today?</div>
+        </div>
+
+        <!-- Input Area with Action Buttons -->
+        <div class="p-4 bg-gray-800 rounded-lg m-4 shadow-xl dark-theme-gradient">
+            <div class="flex items-center space-x-2">
+                <!-- File input for image upload, hidden -->
+                <input type="file" id="imageFileInput" accept="image/*" class="hidden">
+                
+                <!-- Image Input Button (updated) -->
+                <button id="imageInputBtn" class="p-3 bg-gray-700 text-white rounded-xl hover:bg-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                </button>
+                
+                <!-- Image Generate Button (updated with Copilot-like icon) -->
+                <button id="imageGenerateBtn" class="p-3 bg-gray-700 text-white rounded-xl hover:bg-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="M9.9 12.5 7.2 21l2.8-7.5L3 10.5l7.2 2L12 3l1.5 7.5L21 10.5l-2.8 3L14 21z"/></svg>
+                </button>
+
+                <!-- Audio Button -->
+                <button id="audioBtn" class="p-3 bg-gray-700 text-white rounded-xl hover:bg-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                </button>
+                <input type="text" id="userInput" class="flex-grow p-3 bg-gray-700 text-white border-2 border-gray-600 rounded-xl focus:outline-none focus:border-purple-500 transition-colors" placeholder="Type your message...">
+                <button id="sendBtn" class="bg-gradient-to-r from-blue-600 via-purple-600 to-rose-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:opacity-90 transition-opacity">
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Custom Prompt Modal -->
+    <div id="customPromptModal" class="modal-backdrop hidden">
+        <div class="modal-container">
+            <div id="modal-message" class="text-lg"></div>
+            <input type="text" id="modal-input" class="p-3 bg-gray-100 text-gray-800 rounded-md border border-gray-300 focus:outline-none focus:border-blue-500">
+            <div class="flex justify-end gap-2">
+                <button id="modal-cancel" class="px-4 py-2 rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300 transition-colors">Cancel</button>
+                <button id="modal-ok" class="px-4 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, orderBy, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        let app;
+        let db;
+        let auth;
+        let userId = null;
+        let speechSynth = window.speechSynthesis;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            const chatHistory = document.getElementById('chatHistory');
+            const userInput = document.getElementById('userInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const themeToggleBtn = document.getElementById('theme-toggle-btn');
+            const moonIcon = document.getElementById('moon-icon');
+            const sunIcon = document.getElementById('sun-icon');
+            const imageInputBtn = document.getElementById('imageInputBtn');
+            const imageFileInput = document.getElementById('imageFileInput');
+            const imageGenerateBtn = document.getElementById('imageGenerateBtn');
+            const audioBtn = document.getElementById('audioBtn');
+            const userIdDisplay = document.getElementById('userIdDisplay');
+            const customPromptModal = document.getElementById('customPromptModal');
+            const modalMessage = document.getElementById('modal-message');
+            const modalInput = document.getElementById('modal-input');
+            const modalOK = document.getElementById('modal-ok');
+            const modalCancel = document.getElementById('modal-cancel');
+
+            const apiKey = ""; // Canvas will provide this at runtime
+
+            // Function to add a message to the chat history
+            const addMessage = (text, sender, isImage = false) => {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
+                if (isImage) {
+                    const img = document.createElement('img');
+                    img.src = text;
+                    img.classList.add('rounded-lg', 'max-w-full', 'h-auto', 'my-2');
+                    messageDiv.appendChild(img);
+
+                    // Add download button for images
+                    const downloadBtn = document.createElement('a');
+                    downloadBtn.href = text;
+                    downloadBtn.download = `cm-bot-image-${Date.now()}.png`;
+                    downloadBtn.textContent = 'Download Image';
+                    downloadBtn.classList.add('mt-2', 'inline-block', 'px-4', 'py-2', 'bg-blue-600', 'text-white', 'rounded-lg', 'hover:bg-blue-700', 'transition-colors');
+                    messageDiv.appendChild(downloadBtn);
+
+                } else {
+                    messageDiv.textContent = text;
+                }
+                chatHistory.appendChild(messageDiv);
+                chatHistory.scrollTop = chatHistory.scrollHeight; // Auto-scroll to the bottom
+            };
+            
+            // Custom Prompt Modal functions
+            const showPromptModal = (message, callback) => {
+                modalMessage.textContent = message;
+                modalInput.value = '';
+                customPromptModal.classList.remove('hidden');
+                modalInput.focus();
+
+                const handleOK = () => {
+                    customPromptModal.classList.add('hidden');
+                    callback(modalInput.value);
+                    cleanupListeners();
+                };
+
+                const handleCancel = () => {
+                    customPromptModal.classList.add('hidden');
+                    callback(null);
+                    cleanupListeners();
+                };
+
+                const handleKeydown = (event) => {
+                    if (event.key === 'Enter') {
+                        handleOK();
+                    } else if (event.key === 'Escape') {
+                        handleCancel();
+                    }
+                };
+                
+                modalOK.addEventListener('click', handleOK);
+                modalCancel.addEventListener('click', handleCancel);
+                window.addEventListener('keydown', handleKeydown);
+
+                const cleanupListeners = () => {
+                    modalOK.removeEventListener('click', handleOK);
+                    modalCancel.removeEventListener('click', handleCancel);
+                    window.removeEventListener('keydown', handleKeydown);
+                };
+            };
+
+            // Set up theme toggle logic
+            const currentTheme = localStorage.getItem('cm-bot-theme');
+            if (currentTheme === 'light') {
+                document.body.classList.add('light-theme');
+                moonIcon.classList.add('hidden');
+                sunIcon.classList.remove('hidden');
+            } else {
+                document.body.classList.remove('light-theme');
+                moonIcon.classList.remove('hidden');
+                sunIcon.classList.add('hidden');
+            }
+
+            themeToggleBtn.addEventListener('click', () => {
+                const isLight = document.body.classList.toggle('light-theme');
+                if (isLight) {
+                    localStorage.setItem('cm-bot-theme', 'light');
+                    moonIcon.classList.add('hidden');
+                    sunIcon.classList.remove('hidden');
+                } else {
+                    localStorage.setItem('cm-bot-theme', 'dark');
+                    moonIcon.classList.remove('hidden');
+                    sunIcon.classList.add('hidden');
+                }
+            });
+
+            // Handle user authentication and data loading
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    userIdDisplay.textContent = userId;
+
+                    // Load chat history from Firestore for the last 7 days
+                    const daysAgo = new Date();
+                    daysAgo.setDate(daysAgo.getDate() - 7);
+
+                    const q = query(
+                        collection(db, `artifacts/${appId}/users/${userId}/chats`),
+                        where('timestamp', '>=', daysAgo),
+                        orderBy('timestamp')
+                    );
+
+                    // Listen for real-time updates to the chat history
+                    onSnapshot(q, (snapshot) => {
+                        snapshot.docChanges().forEach((change) => {
+                            if (change.type === 'added') {
+                                const data = change.doc.data();
+                                if (data.sender === 'bot' && chatHistory.lastElementChild && chatHistory.lastElementChild.textContent.includes('Thinking')) {
+                                   // If the bot message is a new one and the last message was a loading indicator, remove it.
+                                   chatHistory.removeChild(chatHistory.lastElementChild);
+                                }
+                                // The new structure saves a text record, not the image data
+                                addMessage(data.text, data.sender);
+                            }
+                        });
+                    });
+
+                } else {
+                    try {
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (error) {
+                        console.error("Authentication Error:", error);
+                    }
+                }
+            });
+
+            // Function to handle sending a text message
+            const sendTextMessage = async (userText) => {
+                if (!userText || !userId) return;
+
+                // Save user message to Firestore
+                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/chats`), {
+                    text: userText,
+                    sender: 'user',
+                    timestamp: serverTimestamp(),
+                    type: 'text'
+                });
+
+                userInput.value = '';
+
+                // Display a loading indicator
+                const loadingMessage = document.createElement('div');
+                loadingMessage.classList.add('message', 'bot-message');
+                loadingMessage.innerHTML = '<span class="loading-dots">Thinking</span>';
+                chatHistory.appendChild(loadingMessage);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+
+                const query = userText.toLowerCase();
+
+                // Handle persona-specific rules first
+                let botResponse;
+                if (query.includes('who are you')) {
+                    botResponse = "I am CM-bot, Chandramohan’s AI assistant.";
+                } else if (query.includes('chandramohan') || query.includes('cm')) {
+                    botResponse = "Chandramohan (CM) is a 3rd-year AI & ML student from Tamil Nadu. He’s creative, passionate about building apps, AI tools, and digital products. He loves design, development, and entrepreneurship. His dream is to become a successful businessman.";
+                } else {
+                    // Call the Gemini API for a general response
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                    const payload = {
+                        contents: [
+                            {
+                                role: "user",
+                                parts: [{ text: userText }]
+                            }
+                        ]
+                    };
+
+                    try {
+                        let response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        let retries = 0;
+                        const maxRetries = 5;
+                        while (!response.ok && retries < maxRetries) {
+                            retries++;
+                            const delay = Math.pow(2, retries) * 1000;
+                            await new Promise(res => setTimeout(res, delay));
+                            response = await fetch(apiUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                        }
+
+                        if (!response.ok) {
+                            throw new Error('API request failed');
+                        }
+
+                        const result = await response.json();
+                        if (result.candidates && result.candidates.length > 0 &&
+                            result.candidates[0].content && result.candidates[0].content.parts &&
+                            result.candidates[0].content.parts.length > 0) {
+                            botResponse = result.candidates[0].content.parts[0].text;
+                        } else {
+                            botResponse = "I'm sorry, I couldn't generate a response. Please try again.";
+                        }
+                    } catch (error) {
+                        console.error("Error calling Gemini API:", error);
+                        botResponse = "I'm having a little trouble right now. Please try again in a moment.";
+                    }
+                }
+
+                // Save bot response to Firestore
+                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/chats`), {
+                    text: botResponse,
+                    sender: 'bot',
+                    timestamp: serverTimestamp(),
+                    type: 'text'
+                });
+            };
+
+            // Function to handle image analysis
+            const sendImageForAnalysis = async (imageData, prompt) => {
+                if (!userId) return;
+
+                // Immediately display the user's uploaded image
+                addMessage(imageData, 'user', true);
+
+                // Save a text record to Firestore instead of the image data
+                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/chats`), {
+                    text: `User uploaded an image for analysis with prompt: "${prompt}"`,
+                    sender: 'user',
+                    timestamp: serverTimestamp(),
+                    type: 'text'
+                });
+
+                // Display a loading indicator
+                const loadingMessage = document.createElement('div');
+                loadingMessage.classList.add('message', 'bot-message');
+                loadingMessage.innerHTML = '<span class="loading-dots">Thinking</span>';
+                chatHistory.appendChild(loadingMessage);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const payload = {
+                    contents: [
+                        {
+                            role: "user",
+                            parts: [
+                                { text: prompt },
+                                {
+                                    inlineData: {
+                                        mimeType: "image/jpeg", // Assuming JPEG for simplicity
+                                        data: imageData.split(',')[1] // Get base64 data without prefix
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                };
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Image analysis API request failed');
+                    }
+
+                    const result = await response.json();
+                    const botResponse = result.candidates[0].content.parts[0].text;
+
+                    await addDoc(collection(db, `artifacts/${appId}/users/${userId}/chats`), {
+                        text: botResponse,
+                        sender: 'bot',
+                        timestamp: serverTimestamp(),
+                        type: 'text'
+                    });
+                } catch (error) {
+                    console.error("Error analyzing image:", error);
+                    await addDoc(collection(db, `artifacts/${appId}/users/${userId}/chats`), {
+                        text: "I'm sorry, I couldn't analyze the image. Please try again.",
+                        sender: 'bot',
+                        timestamp: serverTimestamp(),
+                        type: 'text'
+                    });
+                } finally {
+                    // Remove the loading message if it's still there
+                    if (chatHistory.lastElementChild && chatHistory.lastElementChild.textContent.includes('Thinking')) {
+                       chatHistory.removeChild(chatHistory.lastElementChild);
+                    }
+                }
+            };
+            
+            // Function to handle AI image generation
+            const generateImage = async (prompt) => {
+                if (!userId) return;
+
+                // Immediately display a loading indicator
+                const loadingMessage = document.createElement('div');
+                loadingMessage.classList.add('message', 'bot-message');
+                loadingMessage.innerHTML = '<span class="loading-dots">Generating image...</span>';
+                chatHistory.appendChild(loadingMessage);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+                
+                // Add the spinning animation
+                imageGenerateBtn.classList.add('copilot-spin');
+
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+                const payload = { 
+                    instances: { prompt: prompt }, 
+                    parameters: { "sampleCount": 1 } 
+                };
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Image generation API request failed');
+                    }
+
+                    const result = await response.json();
+                    const base64Data = result.predictions?.[0]?.bytesBase64Encoded;
+                    if (!base64Data) {
+                        throw new Error('No image data in response');
+                    }
+                    const imageUrl = `data:image/png;base64,${base64Data}`;
+
+                    // Immediately display the generated image
+                    addMessage(imageUrl, 'bot', true);
+                    
+                    // Save a text record to Firestore instead of the image data
+                    await addDoc(collection(db, `artifacts/${appId}/users/${userId}/chats`), {
+                        text: `Generated an image with prompt: "${prompt}"`,
+                        sender: 'bot',
+                        timestamp: serverTimestamp(),
+                        type: 'text'
+                    });
+
+                } catch (error) {
+                    console.error("Error generating image:", error);
+                    await addDoc(collection(db, `artifacts/${appId}/users/${userId}/chats`), {
+                        text: "I'm sorry, I couldn't generate the image. Please try again.",
+                        sender: 'bot',
+                        timestamp: serverTimestamp(),
+                        type: 'text'
+                    });
+                } finally {
+                    if (chatHistory.lastElementChild && chatHistory.lastElementChild.textContent.includes('Generating')) {
+                       chatHistory.removeChild(chatHistory.lastElementChild);
+                    }
+                    // Remove the spinning animation
+                    imageGenerateBtn.classList.remove('copilot-spin');
+                }
+            };
+
+            // Speech Recognition for Voice Prompts
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition;
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+                recognition.lang = 'en-US';
+
+                recognition.onstart = () => {
+                    audioBtn.classList.add('microphone-recording');
+                };
+
+                recognition.onresult = (event) => {
+                    const speechResult = event.results[0][0].transcript;
+                    if (speechResult) {
+                        generateImage(speechResult);
+                    }
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    addMessage(`I had trouble understanding that. Please try typing your prompt instead.`, 'bot');
+                    audioBtn.classList.remove('microphone-recording');
+                };
+
+                recognition.onend = () => {
+                    audioBtn.classList.remove('microphone-recording');
+                };
+            } else {
+                console.warn('Speech Recognition API is not supported in this browser.');
+                audioBtn.disabled = true;
+                audioBtn.title = "Speech recognition is not supported in your browser.";
+            }
+
+            // Event listeners
+            sendBtn.addEventListener('click', () => sendTextMessage(userInput.value.trim()));
+            userInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    sendTextMessage(userInput.value.trim());
+                }
+            });
+
+            imageInputBtn.addEventListener('click', () => {
+                imageFileInput.click();
+            });
+
+            imageFileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const base64Data = e.target.result;
+                        showPromptModal("Please enter a prompt for the image analysis:", (promptText) => {
+                            if (promptText !== null) {
+                                sendImageForAnalysis(base64Data, promptText);
+                            }
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            imageGenerateBtn.addEventListener('click', () => {
+                showPromptModal("What image would you like to generate?", (promptText) => {
+                    if (promptText !== null) {
+                        generateImage(promptText);
+                    }
+                });
+            });
+
+            audioBtn.addEventListener('click', () => {
+                if (recognition) {
+                    recognition.start();
+                    addMessage("Listening for your voice prompt...", 'bot');
+                } else {
+                     // Use a custom modal as a fallback
+                    const modal = document.createElement('div');
+                    modal.style.cssText = "position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:2rem; border-radius:1rem; box-shadow:0 0 10px rgba(0,0,0,0.5); z-index:100; color:black;";
+                    modal.innerHTML = "Speech recognition is not supported in your browser.<br><br><button onclick='this.parentNode.remove()' style='background: #4F46E5; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; margin-top: 1rem;'>OK</button>";
+                    document.body.appendChild(modal);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
