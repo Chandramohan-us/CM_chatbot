@@ -436,10 +436,10 @@
 
                 // Handle persona-specific rules first
                 let botResponse;
-                if (query.includes('what is your name') || query.includes('who are you') || query.includes('about yourself')) {
+                if (query.includes('who are you') || query.includes('what is your name')) {
                     botResponse = "I am CM-chatbot, Chandramohan's AI assistant.";
                 } else if (query.includes('chandramohan') || query.includes('cm')) {
-                    botResponse = "Chandramohan (CM) is an AI & ML student from Trichy. He's passionate about building apps, AI tools, freelancing, and business. He is skilled in Python, JS, React, Tailwind, Canva, and AI art.";
+                    botResponse = "Chandramohan M (CM) is an AI & ML student from Trichy. He's passionate about building apps, AI tools, freelancing, and business. He is skilled in Python, JS, React, Tailwind, Canva, and AI art.";
                 } else {
                     // Call the Gemini API for a general response
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
