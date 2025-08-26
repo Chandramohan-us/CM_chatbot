@@ -17,7 +17,7 @@
 
         /* Default Dark Theme */
         body {
-            background: linear-gradient(135deg, #1A0033, #150029, #0A0019);
+            background: linear-gradient(135deg, #2D0068, #2A004C, #1A0033);
             background-size: cover;
             background-repeat: no-repeat;
             color: #E2E8F0;
@@ -436,10 +436,10 @@
 
                 // Handle persona-specific rules first
                 let botResponse;
-                if (query.includes('who are you')) {
-                    botResponse = "I am CM-bot, Chandramohan’s AI assistant.";
+                if (query.includes('what is your name') || query.includes('who are you') || query.includes('about yourself')) {
+                    botResponse = "I am CM-chatbot, Chandramohan's AI assistant.";
                 } else if (query.includes('chandramohan') || query.includes('cm')) {
-                    botResponse = "Chandramohan (CM) is a 3rd-year AI & ML student from Tamil Nadu. He’s creative, passionate about building apps, AI tools, and digital products. He loves design, development, and entrepreneurship. His dream is to become a successful businessman.";
+                    botResponse = "Chandramohan (CM) is an AI & ML student from Trichy. He's passionate about building apps, AI tools, freelancing, and business. He is skilled in Python, JS, React, Tailwind, Canva, and AI art.";
                 } else {
                     // Call the Gemini API for a general response
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
