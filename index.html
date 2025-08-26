@@ -17,7 +17,7 @@
 
         /* Default Dark Theme */
         body {
-            background: linear-gradient(135deg, #2D0068, #2A004C, #1A0033);
+            background: linear-gradient(135deg, #1A0033, #150029, #0A0019);
             background-size: cover;
             background-repeat: no-repeat;
             color: #E2E8F0;
@@ -182,7 +182,7 @@
         </div>
 
         <!-- User ID Display -->
-        <div class="flex justify-center text-sm text-gray-400 -mt-2 mb-2">
+        <div class="flex justify-center text-sm text-gray-400 -mt-2 mb-2 hidden">
             User ID: <span id="userIdDisplay" class="ml-1 font-mono">Loading...</span>
         </div>
 
@@ -241,6 +241,7 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const apiKey = ""; // Canvas will provide this at runtime
 
         // Initialize Firebase
         let app;
@@ -250,6 +251,12 @@
         let speechSynth = window.speechSynthesis;
 
         document.addEventListener('DOMContentLoaded', async () => {
+            // Check if Firebase is already initialized
+            if (typeof firebaseConfig.projectId !== 'string') {
+                console.error("Firebase is not initialized. Please paste your firebaseConfig object into the code.");
+                return;
+            }
+
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
@@ -271,7 +278,6 @@
             const modalOK = document.getElementById('modal-ok');
             const modalCancel = document.getElementById('modal-cancel');
 
-            const apiKey = ""; // Canvas will provide this at runtime
 
             // Function to add a message to the chat history
             const addMessage = (text, sender, isImage = false) => {
